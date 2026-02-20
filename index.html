@@ -188,7 +188,6 @@
             border-color: var(--primary);
         }
 
-        /* Fixed Ripple Styling */
         .ripple {
             position: absolute;
             background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
@@ -239,11 +238,6 @@
             text-transform: uppercase;
             opacity: 0.5;
         }
-
-        /* Hidden Frame to trigger iOS Install Popup */
-        #install-frame {
-            display: none;
-        }
     </style>
 </head>
 
@@ -254,8 +248,6 @@
         <div class="spinner"></div>
     </div>
 </div>
-
-<iframe id="install-frame" name="install-frame"></iframe>
 
 <div class="card">
     <div class="logo-container">
@@ -315,15 +307,27 @@
     });
 
     const buttons = document.querySelectorAll('.install-btn');
-    const iframe = document.getElementById('install-frame');
     
     buttons.forEach(btn => {
-        const triggerInstall = (clientX, clientY) => {
+        const triggerInstall = (e) => {
+            // Prevent event doubling
+            e.preventDefault();
+
+            // Get coordinates for the ripple effect based on event type
+            let clientX, clientY;
+            if (e.type === 'touchend') {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
             const rect = btn.getBoundingClientRect();
             const x = clientX - rect.left;
             const y = clientY - rect.top;
             
-            // 1. Create Ripple Effect
+            // 1. Create Visual Ripple
             const ripple = document.createElement('span');
             ripple.className = 'ripple';
             const size = Math.max(rect.width, rect.height) * 2;
@@ -333,23 +337,19 @@
             btn.appendChild(ripple);
             ripple.addEventListener('animationend', () => ripple.remove());
 
-            // 2. Trigger iOS Install Popup using hidden iframe
+            // 2. Trigger iOS Install Popup directly on window.location
+            // iOS Safari requires this to be a direct result of a user click
             const url = btn.getAttribute('data-href');
             if (url) {
-                iframe.src = url;
+                // Small delay so the user feels the click before the system dialog appears
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 150);
             }
         };
 
-        // Desktop testing support
-        btn.addEventListener('mousedown', (e) => {
-            triggerInstall(e.clientX, e.clientY);
-        });
-
-        // Mobile touch support
-        btn.addEventListener('touchend', (e) => {
-            const touch = e.changedTouches[0];
-            triggerInstall(touch.clientX, touch.clientY);
-        });
+        // Standard click handles both mouse and (most) touch interactions properly in Safari
+        btn.addEventListener('click', triggerInstall);
     });
 </script>
 
