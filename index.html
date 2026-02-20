@@ -38,7 +38,7 @@
             overflow-x: hidden;
         }
 
-        /* Loading Screen */
+        /* Initial Loading Screen */
         #loader {
             position: fixed;
             inset: 0;
@@ -50,10 +50,33 @@
             transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
         }
 
+        /* Installation Progress Overlay */
+        #install-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 7, 18, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s;
+        }
+
+        #install-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
         .spinner-container {
             position: relative;
             width: 50px;
             height: 50px;
+            margin-bottom: 20px;
         }
 
         .spinner {
@@ -67,6 +90,13 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        .install-text {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 500;
+            letter-spacing: 0.02em;
         }
 
         .loaded #loader {
@@ -249,6 +279,14 @@
     </div>
 </div>
 
+<!-- Installation Overlay -->
+<div id="install-overlay">
+    <div class="spinner-container">
+        <div class="spinner"></div>
+    </div>
+    <div class="install-text">Requesting Installation...</div>
+</div>
+
 <div class="card">
     <div class="logo-container">
         <div class="logo-glow"></div>
@@ -256,7 +294,7 @@
     </div>
 
     <h1>Ronix Direct</h1>
-    <p class="subtitle">Nexus Distribution</p>
+    <p class="subtitle">Direct Installation for iOS devices</p>
 
     <div class="grid" id="btn-grid">
         <div class="install-btn" data-href="itms-services://?action=download-manifest&url=https://raw.githubusercontent.com/8ygh/ipa-files/refs/heads/main/Commission.plist">
@@ -294,7 +332,7 @@
     </div>
 
     <div class="footer">
-        DISTRIBUTION V2.5 // @8YGH
+        RONIX DIRECT INSTALLATION // @8ygh // @average_hacker
     </div>
 </div>
 
@@ -307,6 +345,7 @@
     });
 
     const buttons = document.querySelectorAll('.install-btn');
+    const installOverlay = document.getElementById('install-overlay');
     
     buttons.forEach(btn => {
         const triggerInstall = (e) => {
@@ -337,18 +376,24 @@
             btn.appendChild(ripple);
             ripple.addEventListener('animationend', () => ripple.remove());
 
-            // 2. Trigger iOS Install Popup directly on window.location
-            // iOS Safari requires this to be a direct result of a user click
+            // 2. Show Install Progress Overlay
+            installOverlay.classList.add('active');
+
+            // 3. Trigger iOS Install Popup
             const url = btn.getAttribute('data-href');
             if (url) {
-                // Small delay so the user feels the click before the system dialog appears
                 setTimeout(() => {
                     window.location.href = url;
+                    
+                    // Hide the overlay after 3 seconds, as the prompt should have appeared
+                    // and we want the UI to be usable again if they cancel.
+                    setTimeout(() => {
+                        installOverlay.classList.remove('active');
+                    }, 3000);
                 }, 150);
             }
         };
 
-        // Standard click handles both mouse and (most) touch interactions properly in Safari
         btn.addEventListener('click', triggerInstall);
     });
 </script>
